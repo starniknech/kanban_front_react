@@ -1,0 +1,153 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.center-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.top-bar {
+  border-bottom: 1px solid #dde3ed;
+}
+
+.top-bar__toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.top-bar__user {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-container {
+  padding-top: 28px;
+  padding-bottom: 48px;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #eef4ff 0%, #f6fbf7 100%);
+}
+
+.auth-panel {
+  width: min(100%, 440px);
+  padding: 28px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.project-card,
+.section-panel,
+.empty-state {
+  padding: 20px;
+}
+
+.project-card {
+  min-height: 150px;
+  display: flex;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.project-card:hover {
+  border-color: #3157a8;
+  transform: translateY(-2px);
+}
+
+.empty-state {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.list-row {
+  gap: 16px;
+  border: 1px solid #e1e7f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.kanban-column {
+  min-height: 420px;
+  min-width: 240px;
+  padding: 16px;
+}
+
+.task-card {
+  display: block;
+  padding: 14px;
+  transition: border-color 160ms ease;
+}
+
+.task-card:hover {
+  border-color: #0f8a68;
+}
+
+.task-card__description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.task-details-form {
+  max-width: 720px;
+}
+
+@media (max-width: 760px) {
+  .page-header,
+  .top-bar__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kanban-board {
+    grid-template-columns: repeat(4, 260px);
+  }
+}
