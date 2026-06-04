@@ -48,15 +48,54 @@ a {
 
 .auth-page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 24px;
   background: linear-gradient(135deg, #eef4ff 0%, #f6fbf7 100%);
 }
 
 .auth-panel {
-  width: min(100%, 440px);
-  padding: 28px;
+  width: min(100%, 600px);
+  padding: 30px;
+  border-color: #d8e0ed;
+  box-shadow: 0 18px 45px rgba(49, 87, 168, 0.12);
+}
+
+.auth-heading {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.auth-heading h1 {
+  margin-bottom: 6px;
+}
+
+.auth-text-link {
+  align-self: center;
+  color: #3157a8;
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.auth-text-link:hover {
+  color: #0f8a68;
+}
+
+.auth-submit {
+  min-height: 44px;
+}
+
+.auth-submit-error {
+  color: #c62828;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.auth-panel .MuiFormHelperText-root.Mui-error {
+  color: #c62828;
 }
 
 .page-header {

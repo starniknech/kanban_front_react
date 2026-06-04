@@ -28,8 +28,15 @@ export class ApiService {
       (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as RetryableRequestConfig | undefined;
+        const requestUrl = originalRequest?.url || '';
+        const isAuthRequest = requestUrl.startsWith('/auth/');
 
-        if (error.response?.status !== 401 || !originalRequest || originalRequest._retry) {
+        if (
+          error.response?.status !== 401 ||
+          !originalRequest ||
+          originalRequest._retry ||
+          isAuthRequest
+        ) {
           return Promise.reject(error);
         }
 
