@@ -1,27 +1,31 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField } from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { CreateTaskPayload, TaskPriority, TaskStatus } from '../types/domain';
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, ListItemText, MenuItem, Stack, TextField } from '@mui/material';
+import { Controller, useForm } from 'react-hook-form';
+import { CreateTaskPayload, TaskPriority, TaskStatus, UserProject } from '../types/domain';
+import { getEntityId, getMemberUser } from '../utils/entity';
 
 export function CreateTaskModal({
   open,
   onClose,
   onSubmit,
+  members,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (payload: CreateTaskPayload) => Promise<void>;
+  members: UserProject[];
 }) {
-  const { register, handleSubmit, reset, formState } = useForm<CreateTaskPayload>({
+  const { control, register, handleSubmit, reset, formState } = useForm<CreateTaskPayload>({
     defaultValues: {
       status: TaskStatus.TODO,
       priority: TaskPriority.MEDIUM,
       position: 0,
+      assignees: [],
     },
   });
 
   const submit = handleSubmit(async (payload) => {
     await onSubmit(payload);
-    reset({ status: TaskStatus.TODO, priority: TaskPriority.MEDIUM, position: 0 });
+    reset({ status: TaskStatus.TODO, priority: TaskPriority.MEDIUM, position: 0, assignees: [] });
     onClose();
   });
 
@@ -42,6 +46,42 @@ export function CreateTaskModal({
               <MenuItem key={priority} value={priority}>{priority}</MenuItem>
             ))}
           </TextField>
+          <Controller
+            name="assignees"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Assign to"
+                slotProps={{
+                  select: {
+                    multiple: true,
+                    value: field.value || [],
+                    onChange: field.onChange,
+                    renderValue: (selected) =>
+                      (selected as string[])
+                        .map((memberId) => {
+                          const member = members.find((item) => getEntityId(item) === memberId);
+                          return member ? getMemberUser(member)?.name || memberId : memberId;
+                        })
+                        .join(', '),
+                  },
+                }}
+              >
+                {members.map((member) => {
+                  const memberId = getEntityId(member);
+                  const user = getMemberUser(member);
+                  const selected = Boolean(field.value?.includes(memberId));
+                  return (
+                    <MenuItem key={memberId} value={memberId}>
+                      <Checkbox checked={selected} />
+                      <ListItemText primary={user?.name || memberId} secondary={user?.email} />
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
+            )}
+          />
         </Stack>
       </DialogContent>
       <DialogActions>

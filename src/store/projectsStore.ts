@@ -1,28 +1,36 @@
 import { create } from 'zustand';
 import { ProjectsService } from '../services/ProjectsService';
-import { Project, ProjectRole, UserProject } from '../types/domain';
-import { getEntityId } from '../utils/entity';
+import { OnlineProjectUser, Project, ProjectRole, UserProject } from '../types/domain';
+import { getEntityId, getMemberUserId } from '../utils/entity';
+import { getErrorMessage } from '../utils/errors';
+import { useNotificationStore } from './notificationStore';
 
 interface ProjectsState {
   projects: Project[];
   currentProject: Project | null;
   members: UserProject[];
+  onlineUsers: OnlineProjectUser[];
   isLoading: boolean;
   error: string | null;
   fetchProjects: () => Promise<void>;
   fetchProject: (projectId: string) => Promise<void>;
   fetchMembers: (projectId: string) => Promise<void>;
   createProject: (payload: { name: string; description?: string }) => Promise<Project>;
+  updateProject: (projectId: string, payload: { name?: string; description?: string }) => Promise<Project>;
   deleteProject: (projectId: string) => Promise<void>;
   updateMemberRoles: (projectId: string, memberId: string, role: ProjectRole[]) => Promise<void>;
   removeMember: (projectId: string, memberId: string) => Promise<void>;
   upsertMember: (member: UserProject) => void;
+  removeMemberByUserId: (userId: string) => void;
+  upsertProject: (project: Project | null) => void;
+  setOnlineUsers: (users: OnlineProjectUser[]) => void;
 }
 
 export const useProjectsStore = create<ProjectsState>((set, get) => ({
   projects: [],
   currentProject: null,
   members: [],
+  onlineUsers: [],
   isLoading: false,
   error: null,
 
@@ -32,7 +40,9 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       const projects = await ProjectsService.listProjects();
       set({ projects, isLoading: false });
     } catch (error) {
-      set({ error: 'Не удалось загрузить проекты', isLoading: false });
+      const message = getErrorMessage(error, 'Не удалось загрузить проекты');
+      useNotificationStore.getState().showError(message);
+      set({ error: message, isLoading: false });
     }
   },
 
@@ -41,8 +51,10 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
     try {
       const currentProject = await ProjectsService.getProject(projectId);
       set({ currentProject, isLoading: false });
-    } catch {
-      set({ error: 'Не удалось загрузить проект', isLoading: false });
+    } catch (error) {
+      const message = getErrorMessage(error, 'Не удалось загрузить проект');
+      useNotificationStore.getState().showError(message);
+      set({ error: message, isLoading: false });
     }
   },
 
@@ -54,6 +66,12 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   createProject: async (payload) => {
     const project = await ProjectsService.createProject(payload);
     set({ projects: [project, ...get().projects] });
+    return project;
+  },
+
+  updateProject: async (projectId, payload) => {
+    const project = await ProjectsService.updateProject(projectId, payload);
+    get().upsertProject(project);
     return project;
   },
 
@@ -81,4 +99,22 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
         : [member, ...get().members],
     });
   },
+
+  removeMemberByUserId: (userId) => {
+    set({ members: get().members.filter((member) => getMemberUserId(member) !== userId) });
+  },
+
+  upsertProject: (project) => {
+    if (!project) return;
+    const projectId = getEntityId(project);
+    const exists = get().projects.some((item) => getEntityId(item) === projectId);
+    set({
+      currentProject: getEntityId(get().currentProject) === projectId ? project : get().currentProject,
+      projects: exists
+        ? get().projects.map((item) => (getEntityId(item) === projectId ? project : item))
+        : [project, ...get().projects],
+    });
+  },
+
+  setOnlineUsers: (onlineUsers) => set({ onlineUsers }),
 }));

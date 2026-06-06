@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { TasksService } from '../services/TasksService';
-import { CreateTaskPayload, MoveTaskPayload, Task, UpdateTaskPayload } from '../types/domain';
+import { CreateTaskPayload, MoveTaskPayload, Task, TaskStatus, UpdateTaskPayload } from '../types/domain';
 import { getEntityId } from '../utils/entity';
 
 interface TasksState {
@@ -13,6 +13,8 @@ interface TasksState {
   updateTask: (projectId: string, taskId: string, payload: UpdateTaskPayload) => Promise<Task>;
   moveTask: (projectId: string, taskId: string, payload: MoveTaskPayload) => Promise<Task>;
   deleteTask: (projectId: string, taskId: string) => Promise<void>;
+  optimisticMoveTasks: (updates: Array<{ taskId: string; status: TaskStatus; position: number }>) => void;
+  replaceTasks: (tasks: Task[]) => void;
   upsertTask: (task: Task | null) => void;
   removeTask: (task: Task | string | null) => void;
 }
@@ -57,6 +59,21 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     await TasksService.deleteTask(projectId, taskId);
     get().removeTask(taskId);
   },
+
+  optimisticMoveTasks: (updates) => {
+    if (updates.length === 0) return;
+
+    const updatesByTaskId = new Map(updates.map((update) => [update.taskId, update]));
+
+    set({
+      tasks: get().tasks.map((task) => {
+        const update = updatesByTaskId.get(getEntityId(task));
+        return update ? { ...task, status: update.status, position: update.position } : task;
+      }),
+    });
+  },
+
+  replaceTasks: (tasks) => set({ tasks }),
 
   upsertTask: (task) => {
     if (!task) return;

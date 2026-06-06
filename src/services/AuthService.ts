@@ -10,6 +10,10 @@ export interface RegisterPayload extends LoginPayload {
   name: string;
 }
 
+export interface RegisterWithAvatarPayload extends RegisterPayload {
+  avatar?: File;
+}
+
 export class AuthService {
   static async login(payload: LoginPayload) {
     const { data } = await ApiService.instance.post<AuthTokens>('/auth/login', payload);

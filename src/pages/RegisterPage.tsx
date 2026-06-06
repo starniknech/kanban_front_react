@@ -1,16 +1,20 @@
-import { Box, Button, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { ChangeEvent, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RegisterPayload } from '../services/AuthService';
 import { useAuthStore } from '../store/authStore';
+import { useNotificationStore } from '../store/notificationStore';
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const registerUser = useAuthStore((state) => state.register);
+  const showNotification = useNotificationStore((state) => state.showNotification);
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterPayload>({
     mode: 'onBlur',
@@ -21,11 +25,25 @@ export function RegisterPage() {
     },
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [avatar, setAvatar] = useState<File | undefined>();
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>();
+  const watchedName = watch('name');
+
+  const avatarInitial = useMemo(() => watchedName?.[0]?.toUpperCase(), [watchedName]);
+
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setAvatar(file);
+    setAvatarPreview(file ? URL.createObjectURL(file) : undefined);
+  };
 
   const onSubmit = handleSubmit(async (payload) => {
     setSubmitError(null);
     try {
-      await registerUser(payload);
+      const result = await registerUser({ ...payload, avatar });
+      if (result.avatarUploadFailed) {
+        showNotification('Account created. You can retry avatar upload in settings.', 'warning');
+      }
       navigate('/dashboard');
     } catch {
       setSubmitError('Registration failed. Try another email');
@@ -40,6 +58,16 @@ export function RegisterPage() {
             <Typography variant="h1">Registration</Typography>
             <Typography color="text.secondary">Create a simple email/password account.</Typography>
           </Box>
+
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+            <Avatar src={avatarPreview} sx={{ width: 64, height: 64, fontSize: '1.5rem' }}>
+              {avatarInitial}
+            </Avatar>
+            <Button component="label" startIcon={<PhotoCameraIcon />} variant="outlined">
+              Add avatar
+              <input hidden accept="image/*" type="file" onChange={handleAvatarChange} />
+            </Button>
+          </Stack>
 
           <TextField
             label="Name"

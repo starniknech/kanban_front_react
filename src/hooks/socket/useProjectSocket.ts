@@ -1,7 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import { TokenService } from '../../services/TokenService';
+import { useInvitationSocketEvents } from './useInvitationSocketEvents';
 import { useParticipantSocketEvents } from './useParticipantSocketEvents';
+import { useProjectSocketEvents } from './useProjectSocketEvents';
 import { useProjectSocketJoin } from './useProjectSocketJoin';
 import { useTaskSocketEvents } from './useTaskSocketEvents';
 
@@ -18,8 +20,10 @@ export function useProjectSocket(projectId?: string) {
   }, [projectId]);
 
   useProjectSocketJoin(socket, projectId);
+  useProjectSocketEvents(socket);
   useTaskSocketEvents(socket);
   useParticipantSocketEvents(socket);
+  useInvitationSocketEvents(socket, { includeProjectInvitations: true });
 
   useEffect(() => {
     return () => {

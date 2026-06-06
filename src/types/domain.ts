@@ -19,6 +19,11 @@ export enum InvitationStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum NotificationStatus {
+  READ = 'read',
+  UNREAD = 'unread',
+}
+
 export enum TaskStatus {
   TODO = 'todo',
   IN_PROGRESS = 'in_progress',
@@ -34,11 +39,19 @@ export enum TaskPriority {
 }
 
 export enum RealtimeEvent {
+  PROJECT_ONLINE_USERS = 'project.online_users',
+  PROJECT_UPDATED = 'project.updated',
+  PROJECT_RENAMED = 'project.renamed',
   TASK_CREATED = 'task.created',
   TASK_UPDATED = 'task.updated',
   TASK_DELETED = 'task.deleted',
   TASK_MOVED = 'task.moved',
   PARTICIPANT_ROLES_UPDATED = 'participant.roles_updated',
+  PARTICIPANT_REMOVED = 'participant.removed',
+  INVITATION_CREATED = 'invitation.created',
+  INVITATION_ACCEPTED = 'invitation.accepted',
+  INVITATION_DECLINED = 'invitation.declined',
+  INVITATION_CANCELLED = 'invitation.cancelled',
 }
 
 export interface Entity {
@@ -84,12 +97,22 @@ export interface Invitation extends Entity {
   email: string;
   role: InvitationRole;
   status: InvitationStatus;
+  notificationStatus: NotificationStatus;
   expiresAt: string;
   acceptedAt?: string | null;
   declinedAt?: string | null;
   cancelledAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface OnlineProjectUser {
+  userId: EntityId;
+  membershipId: EntityId;
+  name?: string;
+  email?: string;
+  avatar?: string;
+  socketCount: number;
 }
 
 export interface Task extends Entity {
@@ -100,7 +123,7 @@ export interface Task extends Entity {
   priority: TaskPriority;
   position: number;
   createdByUserId: EntityId;
-  assignedToUserId?: EntityId | null;
+  assignees: UserProject[];
   dueDate?: string | null;
   completedAt?: string | null;
   createdAt?: string;
@@ -118,7 +141,7 @@ export interface CreateTaskPayload {
   status?: TaskStatus;
   priority?: TaskPriority;
   position?: number;
-  assignedToUserId?: string;
+  assignees?: string[];
   dueDate?: string;
 }
 
