@@ -1,36 +1,59 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, Stack, Typography } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useInvitationsStore } from '../store/invitationsStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { useProjectsStore } from '../store/projectsStore';
+import { InvitationStatus } from '../types/domain';
 import { getEntityId } from '../utils/entity';
+import { getErrorMessage } from '../utils/errors';
 
 export function InvitationsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const invitations = useInvitationsStore((state) => state.invitations);
   const fetchMyInvitations = useInvitationsStore((state) => state.fetchMyInvitations);
+  const markUnreadInvitationsRead = useInvitationsStore((state) => state.markUnreadInvitationsRead);
   const acceptInvitation = useInvitationsStore((state) => state.acceptInvitation);
   const declineInvitation = useInvitationsStore((state) => state.declineInvitation);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
+  const showError = useNotificationStore((state) => state.showError);
+  const pendingInvitations = useMemo(
+    () => invitations.filter((invitation) => invitation.status === InvitationStatus.PENDING),
+    [invitations],
+  );
 
   useEffect(() => {
     if (open) {
-      fetchMyInvitations();
+      fetchMyInvitations()
+        .then(() => markUnreadInvitationsRead())
+        .catch(() => undefined);
     }
-  }, [fetchMyInvitations, open]);
+  }, [fetchMyInvitations, markUnreadInvitationsRead, open]);
 
   const handleAccept = async (invitationId: string) => {
-    await acceptInvitation(invitationId);
-    await fetchProjects();
+    try {
+      await acceptInvitation(invitationId);
+      await fetchProjects();
+    } catch (error) {
+      showError(getErrorMessage(error, 'Failed to accept invitation'));
+    }
+  };
+
+  const handleDecline = async (invitationId: string) => {
+    try {
+      await declineInvitation(invitationId);
+    } catch (error) {
+      showError(getErrorMessage(error, 'Failed to decline invitation'));
+    }
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Invitations</DialogTitle>
       <DialogContent>
-        {invitations.length === 0 ? (
+        {pendingInvitations.length === 0 ? (
           <Typography color="text.secondary">No pending invitations.</Typography>
         ) : (
           <List disablePadding>
-            {invitations.map((invitation) => {
+            {pendingInvitations.map((invitation) => {
               const invitationId = getEntityId(invitation);
               return (
                 <ListItem key={invitationId} className="list-row">
@@ -42,7 +65,7 @@ export function InvitationsModal({ open, onClose }: { open: boolean; onClose: ()
                   </Stack>
                   <Stack direction="row" spacing={1}>
                     <Button variant="contained" onClick={() => handleAccept(invitationId)}>Accept</Button>
-                    <Button variant="outlined" onClick={() => declineInvitation(invitationId)}>Decline</Button>
+                    <Button variant="outlined" onClick={() => handleDecline(invitationId)}>Decline</Button>
                   </Stack>
                 </ListItem>
               );

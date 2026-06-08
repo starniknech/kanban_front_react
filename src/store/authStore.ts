@@ -1,18 +1,21 @@
 import { create } from 'zustand';
-import { AuthService, LoginPayload, RegisterPayload } from '../services/AuthService';
+import { AuthService, LoginPayload, RegisterPayload, RegisterWithAvatarPayload } from '../services/AuthService';
 import { TokenService } from '../services/TokenService';
 import { UsersService } from '../services/UsersService';
 import { AuthTokens, User } from '../types/domain';
 import { getEntityId } from '../utils/entity';
+import { getErrorMessage } from '../utils/errors';
+import { useNotificationStore } from './notificationStore';
 
 interface AuthState {
   user: User | null;
   isBootstrapping: boolean;
   isAuthenticated: boolean;
   login: (payload: LoginPayload) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  register: (payload: RegisterWithAvatarPayload) => Promise<{ avatarUploadFailed: boolean }>;
   bootstrap: () => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (payload: { name?: string; avatar?: File }) => Promise<User>;
   setUser: (user: User | null) => void;
   setTokens: (tokens: AuthTokens) => void;
 }
@@ -36,11 +39,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user, isAuthenticated: true, isBootstrapping: false });
   },
 
-  register: async (payload) => {
-    const tokens = await AuthService.register(payload);
+  register: async ({ avatar, ...payload }) => {
+    const tokens = await AuthService.register(payload as RegisterPayload);
     TokenService.setTokens(tokens);
-    const user = await UsersService.getMe();
+    let user = await UsersService.getMe();
+    let avatarUploadFailed = false;
+
+    if (avatar && getEntityId(user)) {
+      try {
+        user = await UsersService.updateUser(getEntityId(user), { avatar });
+      } catch (error) {
+        avatarUploadFailed = true;
+        useNotificationStore.getState().showError(
+          getErrorMessage(error, 'Account created, but avatar upload failed. You can retry in settings.'),
+        );
+      }
+    }
+
     set({ user, isAuthenticated: true, isBootstrapping: false });
+    return { avatarUploadFailed };
   },
 
   bootstrap: async () => {
@@ -67,5 +84,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     TokenService.clearTokens();
     set({ user: null, isAuthenticated: false, isBootstrapping: false });
+  },
+
+  updateProfile: async (payload) => {
+    const currentUser = useAuthStore.getState().user;
+    const userId = getEntityId(currentUser);
+
+    if (!userId) {
+      throw new Error('User is not loaded');
+    }
+
+    const user = await UsersService.updateUser(userId, payload);
+    set({ user, isAuthenticated: true });
+    return user;
   },
 }));

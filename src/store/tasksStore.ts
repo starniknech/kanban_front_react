@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { RealtimeService } from '../services/RealtimeService';
 import { TasksService } from '../services/TasksService';
-import { CreateTaskPayload, MoveTaskPayload, Task, UpdateTaskPayload } from '../types/domain';
+import { CreateTaskPayload, MoveTaskPayload, RealtimeEmitEvent, Task, TaskStatus, UpdateTaskPayload } from '../types/domain';
 import { getEntityId } from '../utils/entity';
 
 interface TasksState {
@@ -13,6 +14,8 @@ interface TasksState {
   updateTask: (projectId: string, taskId: string, payload: UpdateTaskPayload) => Promise<Task>;
   moveTask: (projectId: string, taskId: string, payload: MoveTaskPayload) => Promise<Task>;
   deleteTask: (projectId: string, taskId: string) => Promise<void>;
+  optimisticMoveTasks: (updates: Array<{ taskId: string; status: TaskStatus; position: number }>) => void;
+  replaceTasks: (tasks: Task[]) => void;
   upsertTask: (task: Task | null) => void;
   removeTask: (task: Task | string | null) => void;
 }
@@ -35,34 +38,66 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   },
 
   createTask: async (projectId, payload) => {
-    const task = await TasksService.createTask(projectId, payload);
+    const task = await RealtimeService.emitProject<Task>(RealtimeEmitEvent.TASK_CREATE, {
+      projectId,
+      ...payload,
+    });
     get().upsertTask(task);
     return task;
   },
 
   updateTask: async (projectId, taskId, payload) => {
-    const task = await TasksService.updateTask(projectId, taskId, payload);
+    const task = await RealtimeService.emitProject<Task | null>(RealtimeEmitEvent.TASK_UPDATE, {
+      projectId,
+      taskId,
+      ...payload,
+    });
+    if (!task) throw new Error('Task was not updated');
     get().upsertTask(task);
     set({ currentTask: task });
     return task;
   },
 
   moveTask: async (projectId, taskId, payload) => {
-    const task = await TasksService.moveTask(projectId, taskId, payload);
+    const task = await RealtimeService.emitProject<Task | null>(RealtimeEmitEvent.TASK_MOVE, {
+      projectId,
+      taskId,
+      ...payload,
+    });
+    if (!task) throw new Error('Task was not moved');
     get().upsertTask(task);
     return task;
   },
 
   deleteTask: async (projectId, taskId) => {
-    await TasksService.deleteTask(projectId, taskId);
-    get().removeTask(taskId);
+    const task = await RealtimeService.emitProject<Task | null>(RealtimeEmitEvent.TASK_DELETE, {
+      projectId,
+      taskId,
+    });
+    get().removeTask(task || taskId);
   },
+
+  optimisticMoveTasks: (updates) => {
+    if (updates.length === 0) return;
+
+    const updatesByTaskId = new Map(updates.map((update) => [update.taskId, update]));
+
+    set({
+      tasks: get().tasks.map((task) => {
+        const update = updatesByTaskId.get(getEntityId(task));
+        return update ? { ...task, status: update.status, position: update.position } : task;
+      }),
+    });
+  },
+
+  replaceTasks: (tasks) => set({ tasks }),
 
   upsertTask: (task) => {
     if (!task) return;
     const taskId = getEntityId(task);
     const exists = get().tasks.some((item) => getEntityId(item) === taskId);
     set({
+      currentTask: getEntityId(get().currentTask) === taskId ? task : get().currentTask,
       tasks: exists
         ? get().tasks.map((item) => (getEntityId(item) === taskId ? task : item))
         : [task, ...get().tasks],
@@ -72,6 +107,9 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   removeTask: (task) => {
     if (!task) return;
     const taskId = typeof task === 'string' ? task : getEntityId(task);
-    set({ tasks: get().tasks.filter((item) => getEntityId(item) !== taskId) });
+    set({
+      currentTask: getEntityId(get().currentTask) === taskId ? null : get().currentTask,
+      tasks: get().tasks.filter((item) => getEntityId(item) !== taskId),
+    });
   },
 }));

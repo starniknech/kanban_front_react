@@ -1,5 +1,5 @@
 import { ApiService } from './ApiService';
-import { Invitation, InvitationRole } from '../types/domain';
+import { Invitation, InvitationRole, NotificationStatus } from '../types/domain';
 
 export class InvitationsService {
   static async listMyInvitations() {
@@ -30,6 +30,14 @@ export class InvitationsService {
   static async cancelInvitation(projectId: string, invitationId: string) {
     const { data } = await ApiService.instance.patch<Invitation>(
       '/projects/' + projectId + '/invitations/' + invitationId + '/cancel',
+    );
+    return data;
+  }
+
+  static async updateNotificationStatus(invitationId: string, notificationStatus: NotificationStatus) {
+    const { data } = await ApiService.instance.patch<Invitation>(
+      '/invitations/' + invitationId + '/notification-status',
+      { notificationStatus },
     );
     return data;
   }

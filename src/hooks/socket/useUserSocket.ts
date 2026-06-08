@@ -3,20 +3,16 @@ import { io, Socket } from 'socket.io-client';
 import { RealtimeService } from '../../services/RealtimeService';
 import { TokenService } from '../../services/TokenService';
 import { useInvitationSocketEvents } from './useInvitationSocketEvents';
-import { useParticipantSocketEvents } from './useParticipantSocketEvents';
-import { useProjectSocketEvents } from './useProjectSocketEvents';
-import { useProjectSocketJoin } from './useProjectSocketJoin';
-import { useTaskSocketEvents } from './useTaskSocketEvents';
 
-export function useProjectSocket(projectId?: string) {
+export function useUserSocket(enabled: boolean) {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const token = TokenService.getAccessToken();
 
-    if (!projectId || !token) {
+    if (!enabled || !token) {
       setSocket(null);
-      RealtimeService.setProjectSocket(null);
+      RealtimeService.setUserSocket(null);
       return;
     }
 
@@ -31,20 +27,16 @@ export function useProjectSocket(projectId?: string) {
     );
 
     setSocket(nextSocket);
-    RealtimeService.setProjectSocket(nextSocket);
+    RealtimeService.setUserSocket(nextSocket);
 
     return () => {
-      RealtimeService.clearProjectSocket(nextSocket);
+      RealtimeService.clearUserSocket(nextSocket);
       nextSocket.disconnect();
       setSocket(null);
     };
-  }, [projectId]);
+  }, [enabled]);
 
-  useProjectSocketJoin(socket, projectId);
-  useProjectSocketEvents(socket);
-  useTaskSocketEvents(socket);
-  useParticipantSocketEvents(socket);
-  useInvitationSocketEvents(socket, { includeProjectInvitations: true });
+  useInvitationSocketEvents(socket, { includeMyInvitations: true });
 
   return socket;
 }
