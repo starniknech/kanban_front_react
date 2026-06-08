@@ -63,7 +63,6 @@ const columnIdPrefix = 'column:';
 
 interface RenameForm {
   name: string;
-  description?: string;
 }
 
 type TaskView = 'kanban' | 'list';
@@ -79,6 +78,7 @@ export function ProjectPage() {
   const currentProject = useProjectsStore((state) => state.currentProject);
   const members = useProjectsStore((state) => state.members);
   const onlineUsers = useProjectsStore((state) => state.onlineUsers);
+  const deletedProjectId = useProjectsStore((state) => state.deletedProjectId);
   const fetchProject = useProjectsStore((state) => state.fetchProject);
   const fetchMembers = useProjectsStore((state) => state.fetchMembers);
   const updateProject = useProjectsStore((state) => state.updateProject);
@@ -105,7 +105,6 @@ export function ProjectPage() {
   const { register, handleSubmit, reset, formState } = useForm<RenameForm>({
     values: {
       name: currentProject?.name || '',
-      description: currentProject?.description || '',
     },
   });
 
@@ -116,6 +115,13 @@ export function ProjectPage() {
       fetchTasks(projectId);
     }
   }, [fetchMembers, fetchProject, fetchTasks, projectId]);
+
+  useEffect(() => {
+    if (deletedProjectId === projectId) {
+      showNotification('Project deleted', 'info');
+      navigate('/dashboard');
+    }
+  }, [deletedProjectId, navigate, projectId, showNotification]);
 
   const currentMembership = useMemo(
     () => getCurrentMembership(members, getEntityId(user)),
@@ -266,7 +272,6 @@ export function ProjectPage() {
   const openRename = () => {
     reset({
       name: currentProject?.name || '',
-      description: currentProject?.description || '',
     });
     setRenameOpen(true);
   };
@@ -402,7 +407,6 @@ export function ProjectPage() {
                 minLength: { value: 2, message: 'Name must be at least 2 characters' },
               })}
             />
-            <TextField label="Description" multiline minRows={3} {...register('description')} />
           </Stack>
         </DialogContent>
         <DialogActions>

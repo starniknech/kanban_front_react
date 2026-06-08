@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { PageHeader } from '../components/common/PageHeader';
+import { useProjectSocket } from '../hooks/socket/useProjectSocket';
 import { useNotificationStore } from '../store/notificationStore';
 import { useProjectsStore } from '../store/projectsStore';
 import { useTasksStore } from '../store/tasksStore';
@@ -24,6 +25,7 @@ export function TaskDetailsPage() {
   const showNotification = useNotificationStore((state) => state.showNotification);
   const showError = useNotificationStore((state) => state.showError);
   const { control, register, handleSubmit, reset, formState } = useForm<UpdateTaskPayload>();
+  useProjectSocket(projectId);
 
   useEffect(() => {
     if (projectId && taskId) {

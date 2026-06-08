@@ -1,27 +1,42 @@
-import { useEffect, useMemo } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { RealtimeService } from '../../services/RealtimeService';
 import { TokenService } from '../../services/TokenService';
 import { useInvitationSocketEvents } from './useInvitationSocketEvents';
 
 export function useUserSocket(enabled: boolean) {
-  const socket = useMemo(() => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
     const token = TokenService.getAccessToken();
 
-    if (!enabled || !token) return null;
+    if (!enabled || !token) {
+      setSocket(null);
+      RealtimeService.setUserSocket(null);
+      return;
+    }
 
-    return io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3000', {
-      auth: { token },
-      autoConnect: true,
-    });
+    const nextSocket = io(
+      process.env.REACT_APP_SOCKET_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000',
+      {
+        auth: { token },
+        autoConnect: true,
+        forceNew: true,
+        transports: ['websocket'],
+      },
+    );
+
+    setSocket(nextSocket);
+    RealtimeService.setUserSocket(nextSocket);
+
+    return () => {
+      RealtimeService.clearUserSocket(nextSocket);
+      nextSocket.disconnect();
+      setSocket(null);
+    };
   }, [enabled]);
 
   useInvitationSocketEvents(socket, { includeMyInvitations: true });
-
-  useEffect(() => {
-    return () => {
-      socket?.disconnect();
-    };
-  }, [socket]);
 
   return socket;
 }

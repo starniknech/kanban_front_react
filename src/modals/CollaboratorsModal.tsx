@@ -1,9 +1,9 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, List, ListItem, MenuItem, Stack, TextField, Typography } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useInvitationsStore } from '../store/invitationsStore';
 import { useProjectsStore } from '../store/projectsStore';
-import { InvitationRole, ProjectRole, UserProject } from '../types/domain';
+import { InvitationRole, InvitationStatus, ProjectRole, UserProject } from '../types/domain';
 import { getEntityId, getMemberUser, getMemberUserId, hasRole } from '../utils/entity';
 
 interface InviteForm {
@@ -36,6 +36,10 @@ export function CollaboratorsModal({
 
   const isOwner = hasRole(currentMembership?.role, ProjectRole.OWNER);
   const isAdmin = hasRole(currentMembership?.role, ProjectRole.ADMIN);
+  const pendingProjectInvitations = useMemo(
+    () => projectInvitations.filter((invitation) => invitation.status === InvitationStatus.PENDING),
+    [projectInvitations],
+  );
 
   useEffect(() => {
     if (open) {
@@ -110,7 +114,7 @@ export function CollaboratorsModal({
 
               <Stack spacing={1}>
                 <Typography variant="h3">Pending invitations</Typography>
-                {projectInvitations.map((invitation) => {
+                {pendingProjectInvitations.map((invitation) => {
                   const invitationId = getEntityId(invitation);
                   return (
                     <ListItem key={invitationId} className="list-row">

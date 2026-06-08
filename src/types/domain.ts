@@ -39,9 +39,11 @@ export enum TaskPriority {
 }
 
 export enum RealtimeEvent {
+  DASHBOARD_INVITATIONS = 'dashboard.invitations',
   PROJECT_ONLINE_USERS = 'project.online_users',
   PROJECT_UPDATED = 'project.updated',
   PROJECT_RENAMED = 'project.renamed',
+  PROJECT_DELETED = 'project.deleted',
   TASK_CREATED = 'task.created',
   TASK_UPDATED = 'task.updated',
   TASK_DELETED = 'task.deleted',
@@ -49,9 +51,30 @@ export enum RealtimeEvent {
   PARTICIPANT_ROLES_UPDATED = 'participant.roles_updated',
   PARTICIPANT_REMOVED = 'participant.removed',
   INVITATION_CREATED = 'invitation.created',
+  INVITATION_UPDATED = 'invitation.updated',
   INVITATION_ACCEPTED = 'invitation.accepted',
   INVITATION_DECLINED = 'invitation.declined',
   INVITATION_CANCELLED = 'invitation.cancelled',
+}
+
+export enum RealtimeEmitEvent {
+  DASHBOARD_JOIN = 'dashboard.join',
+  DASHBOARD_LEAVE = 'dashboard.leave',
+  PROJECT_RENAME = 'project.rename',
+  PROJECT_DELETE = 'project.delete',
+  PARTICIPANT_ROLES_UPDATE = 'participant.roles.update',
+  PARTICIPANT_REMOVE = 'participant.remove',
+  TASK_CREATE = 'task.create',
+  TASK_UPDATE = 'task.update',
+  TASK_MOVE = 'task.move',
+  TASK_DELETE = 'task.delete',
+  INVITATION_CREATE = 'invitation.create',
+  INVITATION_UPDATE_NOTIFICATION_STATUS = 'invitation.update_notification_status',
+  INVITATION_UPDATE = 'invitation.update',
+  INVITATION_ACCEPT = 'invitation.accept',
+  INVITATION_DECLINE = 'invitation.decline',
+  INVITATION_CANCEL = 'invitation.cancel',
+  INVITATION_DELETE = 'invitation.delete',
 }
 
 export interface Entity {
@@ -142,7 +165,7 @@ export interface CreateTaskPayload {
   priority?: TaskPriority;
   position?: number;
   assignees?: string[];
-  dueDate?: string;
+  dueDate?: string | Date;
 }
 
 export type UpdateTaskPayload = Partial<CreateTaskPayload>;

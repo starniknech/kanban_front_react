@@ -1,8 +1,9 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, Stack, Typography } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useInvitationsStore } from '../store/invitationsStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { useProjectsStore } from '../store/projectsStore';
+import { InvitationStatus } from '../types/domain';
 import { getEntityId } from '../utils/entity';
 import { getErrorMessage } from '../utils/errors';
 
@@ -14,6 +15,10 @@ export function InvitationsModal({ open, onClose }: { open: boolean; onClose: ()
   const declineInvitation = useInvitationsStore((state) => state.declineInvitation);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
   const showError = useNotificationStore((state) => state.showError);
+  const pendingInvitations = useMemo(
+    () => invitations.filter((invitation) => invitation.status === InvitationStatus.PENDING),
+    [invitations],
+  );
 
   useEffect(() => {
     if (open) {
@@ -44,11 +49,11 @@ export function InvitationsModal({ open, onClose }: { open: boolean; onClose: ()
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Invitations</DialogTitle>
       <DialogContent>
-        {invitations.length === 0 ? (
+        {pendingInvitations.length === 0 ? (
           <Typography color="text.secondary">No pending invitations.</Typography>
         ) : (
           <List disablePadding>
-            {invitations.map((invitation) => {
+            {pendingInvitations.map((invitation) => {
               const invitationId = getEntityId(invitation);
               return (
                 <ListItem key={invitationId} className="list-row">

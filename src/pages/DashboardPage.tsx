@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '../components/common/EmptyState';
 import { PageHeader } from '../components/common/PageHeader';
+import { useDashboardSocketJoin } from '../hooks/socket/useDashboardSocketJoin';
 import { useUserSocket } from '../hooks/socket/useUserSocket';
 import { CreateProjectModal } from '../modals/CreateProjectModal';
 import { InvitationsModal } from '../modals/InvitationsModal';
@@ -22,13 +23,14 @@ export function DashboardPage() {
   const projects = useProjectsStore((state) => state.projects);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
   const createProject = useProjectsStore((state) => state.createProject);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
   const invitations = useInvitationsStore((state) => state.invitations);
   const fetchMyInvitations = useInvitationsStore((state) => state.fetchMyInvitations);
   const showError = useNotificationStore((state) => state.showError);
   const [createOpen, setCreateOpen] = useState(false);
   const [invitationsOpen, setInvitationsOpen] = useState(false);
-  useUserSocket(isAuthenticated);
+  const socket = useUserSocket(Boolean(user));
+  useDashboardSocketJoin(socket);
 
   const describedProjectsCount = useMemo(
     () => projects.filter((project) => Boolean(project.description?.trim())).length,
