@@ -67,6 +67,15 @@ interface RenameForm {
 
 type TaskView = 'kanban' | 'list';
 
+interface MemberAvatarItem {
+  key: string;
+  membershipId: string;
+  userId: string;
+  name?: string;
+  email?: string;
+  avatar?: string | null;
+}
+
 function sortByPosition(first: Task, second: Task) {
   return first.position - second.position;
 }
@@ -157,6 +166,42 @@ export function ProjectPage() {
 
   const isOnline = (memberId: string, userId?: string) =>
     onlineUsers.some((onlineUser) => onlineUser.membershipId === memberId || onlineUser.userId === userId);
+
+  const memberAvatars = useMemo(() => {
+    const avatars = members.map<MemberAvatarItem>((member) => {
+      const memberId = getEntityId(member);
+      const memberUser = getMemberUser(member);
+      const memberUserId = getEntityId(memberUser) || (typeof member.userId === 'string' ? member.userId : '');
+
+      return {
+        key: memberId,
+        membershipId: memberId,
+        userId: memberUserId,
+        name: memberUser?.name,
+        email: memberUser?.email,
+        avatar: memberUser?.avatar,
+      };
+    });
+
+    onlineUsers.forEach((onlineUser) => {
+      const exists = avatars.some((avatar) =>
+        avatar.membershipId === onlineUser.membershipId || avatar.userId === onlineUser.userId,
+      );
+
+      if (!exists) {
+        avatars.push({
+          key: onlineUser.membershipId || onlineUser.userId,
+          membershipId: onlineUser.membershipId,
+          userId: onlineUser.userId,
+          name: onlineUser.name,
+          email: onlineUser.email,
+          avatar: onlineUser.avatar,
+        });
+      }
+    });
+
+    return avatars;
+  }, [members, onlineUsers]);
 
   const handleDelete = async () => {
     try {
@@ -317,20 +362,21 @@ export function ProjectPage() {
             </IconButton>
           </Tooltip>
           <AvatarGroup max={8} className="member-avatar-group">
-            {members.map((member) => {
-              const memberId = getEntityId(member);
-              const memberUser = getMemberUser(member);
-              const memberUserId = getEntityId(memberUser);
+            {memberAvatars.map((member) => {
+              const tooltipTitle = [member.name, member.email].filter(Boolean).join(' · ')
+                || member.membershipId
+                || member.userId;
+
               return (
                 <Tooltip
-                  key={memberId}
-                  title={memberUser ? memberUser.name + ' · ' + memberUser.email : memberId}
+                  key={member.key}
+                  title={tooltipTitle}
                 >
                   <Avatar
-                    src={getAssetUrl(memberUser?.avatar)}
-                    className={isOnline(memberId, memberUserId) ? 'member-avatar member-avatar--online' : 'member-avatar'}
+                    src={getAssetUrl(member.avatar)}
+                    className={isOnline(member.membershipId, member.userId) ? 'member-avatar member-avatar--online' : 'member-avatar'}
                   >
-                    {memberUser?.name?.[0]?.toUpperCase()}
+                    {member.name?.[0]?.toUpperCase()}
                   </Avatar>
                 </Tooltip>
               );

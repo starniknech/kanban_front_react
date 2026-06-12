@@ -27,6 +27,23 @@ interface ProjectsState {
   upsertProject: (project: Project | null) => void;
   removeProject: (project: Project | string | null) => void;
   setOnlineUsers: (users: OnlineProjectUser[]) => void;
+  upsertOnlineUsers: (users: OnlineProjectUser[]) => void;
+}
+
+function isSameOnlineUser(first: OnlineProjectUser, second: OnlineProjectUser) {
+  return first.membershipId === second.membershipId || first.userId === second.userId;
+}
+
+function mergeOnlineUsers(currentUsers: OnlineProjectUser[], nextUsers: OnlineProjectUser[]) {
+  return nextUsers.reduce<OnlineProjectUser[]>((acc, onlineUser) => {
+    const index = acc.findIndex((item) => isSameOnlineUser(item, onlineUser));
+
+    if (index === -1) {
+      return [...acc, onlineUser];
+    }
+
+    return acc.map((item, itemIndex) => (itemIndex === index ? onlineUser : item));
+  }, currentUsers);
 }
 
 export const useProjectsStore = create<ProjectsState>((set, get) => ({
@@ -159,4 +176,5 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   },
 
   setOnlineUsers: (onlineUsers) => set({ onlineUsers }),
+  upsertOnlineUsers: (onlineUsers) => set({ onlineUsers: mergeOnlineUsers(get().onlineUsers, onlineUsers) }),
 }));

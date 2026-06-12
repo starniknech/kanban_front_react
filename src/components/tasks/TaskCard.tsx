@@ -33,6 +33,7 @@ export function TaskCard({
             to={'/project/' + projectId + '/tasks/' + taskId}
             variant="subtitle1"
             className="task-card__title-link"
+            title={task.title}
           >
             {task.title}
           </Typography>

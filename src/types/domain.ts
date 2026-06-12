@@ -39,6 +39,7 @@ export enum TaskPriority {
 }
 
 export enum RealtimeEvent {
+  ERROR = 'error',
   DASHBOARD_INVITATIONS = 'dashboard.invitations',
   PROJECT_ONLINE_USERS = 'project.online_users',
   PROJECT_UPDATED = 'project.updated',
@@ -80,6 +81,18 @@ export enum RealtimeEmitEvent {
 export interface Entity {
   _id?: EntityId;
   id?: EntityId;
+}
+
+export type ErrorEnum = 'PENDING_INVITATION_ALREADY_EXISTS' | 'USER_ALREADY_PROJECT_MEMBER';
+
+export type ErrorMessageEnum =
+  | 'User already has a pending invitation to this project'
+  | 'User is already a project member';
+
+export interface ErrorPayload {
+  error: ErrorEnum;
+  message: ErrorMessageEnum;
+  statusCode: number;
 }
 
 export interface User extends Entity {

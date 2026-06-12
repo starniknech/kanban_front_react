@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { RealtimeService } from '../../services/RealtimeService';
 import { TokenService } from '../../services/TokenService';
 import { useInvitationSocketEvents } from './useInvitationSocketEvents';
+import { useRealtimeErrorEvents } from './useRealtimeErrorEvents';
 
 export function useUserSocket(enabled: boolean) {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -37,6 +38,7 @@ export function useUserSocket(enabled: boolean) {
   }, [enabled]);
 
   useInvitationSocketEvents(socket, { includeMyInvitations: true });
+  useRealtimeErrorEvents(socket);
 
   return socket;
 }

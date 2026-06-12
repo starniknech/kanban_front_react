@@ -6,6 +6,7 @@ import { useInvitationSocketEvents } from './useInvitationSocketEvents';
 import { useParticipantSocketEvents } from './useParticipantSocketEvents';
 import { useProjectSocketEvents } from './useProjectSocketEvents';
 import { useProjectSocketJoin } from './useProjectSocketJoin';
+import { useRealtimeErrorEvents } from './useRealtimeErrorEvents';
 import { useTaskSocketEvents } from './useTaskSocketEvents';
 
 export function useProjectSocket(projectId?: string) {
@@ -44,7 +45,8 @@ export function useProjectSocket(projectId?: string) {
   useProjectSocketEvents(socket);
   useTaskSocketEvents(socket);
   useParticipantSocketEvents(socket);
-  useInvitationSocketEvents(socket, { includeProjectInvitations: true });
+  useInvitationSocketEvents(socket, { includeProjectInvitations: true, projectId });
+  useRealtimeErrorEvents(socket);
 
   return socket;
 }

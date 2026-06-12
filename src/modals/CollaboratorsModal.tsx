@@ -30,7 +30,7 @@ export function CollaboratorsModal({
   const fetchProjectInvitations = useInvitationsStore((state) => state.fetchProjectInvitations);
   const createInvitation = useInvitationsStore((state) => state.createInvitation);
   const cancelInvitation = useInvitationsStore((state) => state.cancelInvitation);
-  const { register, handleSubmit, reset, formState } = useForm<InviteForm>({
+  const { register, handleSubmit, setValue, formState } = useForm<InviteForm>({
     defaultValues: { role: InvitationRole.MEMBER },
   });
 
@@ -49,8 +49,8 @@ export function CollaboratorsModal({
   }, [fetchMembers, fetchProjectInvitations, isAdmin, open, projectId]);
 
   const submitInvite = handleSubmit(async (payload) => {
+    setValue('email', '');
     await createInvitation(projectId, payload);
-    reset({ role: InvitationRole.MEMBER, email: '' });
   });
 
   const handleRoleChange = async (memberId: string, value: string) => {

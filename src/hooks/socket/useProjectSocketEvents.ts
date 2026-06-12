@@ -5,18 +5,29 @@ import { OnlineProjectUser, Project, RealtimeEvent } from '../../types/domain';
 
 interface OnlineUsersPayload {
   projectId: string;
-  users: OnlineProjectUser[];
+  users?: OnlineProjectUser[];
+  user?: OnlineProjectUser;
+  onlineUser?: OnlineProjectUser;
 }
 
 export function useProjectSocketEvents(socket: Socket | null) {
   const setOnlineUsers = useProjectsStore((state) => state.setOnlineUsers);
+  const upsertOnlineUsers = useProjectsStore((state) => state.upsertOnlineUsers);
   const upsertProject = useProjectsStore((state) => state.upsertProject);
   const removeProject = useProjectsStore((state) => state.removeProject);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleOnlineUsers = (payload: OnlineUsersPayload) => setOnlineUsers(payload.users);
+    const handleOnlineUsers = (payload: OnlineUsersPayload) => {
+      if (payload.users) {
+        setOnlineUsers(payload.users);
+        return;
+      }
+
+      const onlineUser = payload.user || payload.onlineUser;
+      if (onlineUser) upsertOnlineUsers([onlineUser]);
+    };
     const handleProjectUpdate = (project: Project | null) => upsertProject(project);
     const handleProjectDelete = (project: Project | null) => removeProject(project);
 
@@ -31,5 +42,5 @@ export function useProjectSocketEvents(socket: Socket | null) {
       socket.off(RealtimeEvent.PROJECT_RENAMED, handleProjectUpdate);
       socket.off(RealtimeEvent.PROJECT_DELETED, handleProjectDelete);
     };
-  }, [removeProject, setOnlineUsers, socket, upsertProject]);
+  }, [removeProject, setOnlineUsers, socket, upsertOnlineUsers, upsertProject]);
 }
